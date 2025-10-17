@@ -161,7 +161,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                     input: { text: texto },
-                    voice: { languageCode: 'pt-BR', name: 'pt-BR-Wavenet-B' },
+                    voice: { languageCode: 'pt-BR', name: 'pt-BR-Neural2-B' },
                     audioConfig: { audioEncoding: 'MP3' }
                 })
             });
