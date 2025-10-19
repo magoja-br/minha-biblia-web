@@ -18,31 +18,45 @@ header {
     padding: 1rem;
     text-align: center;
     box-shadow: 0 2px 5px rgba(0,0,0,0.2);
-    position: sticky; /* Esta é a propriedade mágica que fixa o cabeçalho */
+    position: sticky;
     top: 0;
     z-index: 1000;
 }
 h1 { margin: 0; font-size: 1.5rem; }
-nav { display: flex; justify-content: center; gap: 1rem; margin-top: 1rem; }
-select { padding: 0.5rem; border-radius: 5px; border: none; background-color: white; font-size: 1rem; }
+nav { 
+    display: flex; 
+    justify-content: center; 
+    align-items: center;
+    gap: 1rem; 
+    margin-top: 1rem; 
+    flex-wrap: wrap; 
+}
+select { 
+    padding: 0.5rem; 
+    border-radius: 5px; 
+    border: none; 
+    background-color: white; 
+    font-size: 1rem; 
+    flex-shrink: 0;
+}
 main { max-width: 800px; margin: 2rem auto; padding: 1rem; background-color: var(--cor-fundo); border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
 
-/* --- ESTILOS ATUALIZADOS PARA O PLAYER --- */
 .player-controls {
     display: flex;
     justify-content: center;
     align-items: center;
     gap: 1rem;
-    margin-top: 1rem; /* Espaçamento abaixo dos seletores */
+    margin-top: 1rem;
+    flex-shrink: 0;
 }
 .player-button {
-    background-color: rgba(255, 255, 255, 0.9); /* Fundo branco semi-transparente */
-    color: var(--cor-primaria); /* Cor do ícone azul */
+    background-color: rgba(255, 255, 255, 0.9);
+    color: var(--cor-primaria);
     border: none;
     border-radius: 50%;
-    width: 50px;
-    height: 50px;
-    font-size: 1.5rem;
+    width: 40px; /* Reduzido */
+    height: 40px; /* Reduzido */
+    font-size: 1.2rem; /* Reduzido */
     cursor: pointer;
     display: flex;
     justify-content: center;
@@ -50,12 +64,23 @@ main { max-width: 800px; margin: 2rem auto; padding: 1rem; background-color: var
     transition: background-color 0.2s;
 }
 .player-button:hover {
-    background-color: white; /* Fica branco sólido ao passar o mouse */
+    background-color: white;
 }
-/* --- FIM DOS ESTILOS ATUALIZADOS --- */
-
 .aviso { text-align: center; color: #777; font-style: italic; }
-.versiculo { display: flex; align-items: flex-start; gap: 10px; margin-bottom: 0.5rem; padding: 5px; border-radius: 4px; transition: background-color 0.3s;}
+
+.versiculo { 
+    display: flex; 
+    align-items: flex-start; 
+    gap: 10px; 
+    margin-bottom: 0.5rem; 
+    padding: 5px; 
+    border-radius: 4px; 
+    transition: background-color 0.3s;
+    cursor: pointer;
+}
+.versiculo:hover {
+    background-color: #f0f0f0;
+}
 .numero-versiculo { font-weight: bold; color: var(--cor-primaria); min-width: 25px; }
 .texto-versiculo { flex-grow: 1; }
 .lendo-agora {
@@ -63,8 +88,35 @@ main { max-width: 800px; margin: 2rem auto; padding: 1rem; background-color: var
 }
 
 footer { text-align: center; padding: 1rem; color: #888; font-size: 0.9rem; }
+
+/* --- SEÇÃO DE OTIMIZAÇÃO PARA CELULARES (menos de 600px) --- */
 @media (max-width: 600px) {
-    nav { flex-direction: column; }
-    main { margin: 1rem; padding: 0.5rem; }
-    h1 { font-size: 1.2rem; }
+    header {
+        padding: 0.5rem; /* Reduz o padding do cabeçalho */
+    }
+    h1 {
+        font-size: 1.2rem; /* Reduz o tamanho do título */
+        margin-bottom: 0.5rem;
+    }
+    nav { 
+        flex-direction: row; /* Mantém na mesma linha se possível */
+        justify-content: space-around; /* Distribui os seletores */
+        gap: 0.5rem;
+        margin-top: 0;
+    }
+
+    /* Reduz o tamanho dos seletores no celular */
+    select {
+        font-size: 0.9rem;
+        padding: 0.3rem;
+        width: 48%; /* Permite que dois seletores caibam bem lado a lado */
+    }
+    
+    /* Centraliza o player abaixo dos seletores se precisar */
+    #player-container {
+        margin-top: 0.5rem; 
+        width: 100%;
+    }
+    
+    main { margin: 1rem 0.5rem; padding: 0.5rem; }
 }
