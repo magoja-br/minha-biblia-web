@@ -15,7 +15,7 @@ body {
 header {
     background-color: var(--cor-primaria);
     color: white;
-    padding: 1rem; /* Espaçamento padrão para telas grandes */
+    padding: 1rem; 
     text-align: center;
     box-shadow: 0 2px 5px rgba(0,0,0,0.2);
     position: sticky;
@@ -55,9 +55,9 @@ main { max-width: 800px; margin: 2rem auto; padding: 1rem; background-color: var
     color: var(--cor-primaria);
     border: none;
     border-radius: 50%;
-    width: 40px; /* Reduzido */
-    height: 40px; /* Reduzido */
-    font-size: 1.2rem; /* Reduzido */
+    width: 40px; 
+    height: 40px; 
+    font-size: 1.2rem;
     cursor: pointer;
     display: flex;
     justify-content: center;
@@ -90,39 +90,45 @@ main { max-width: 800px; margin: 2rem auto; padding: 1rem; background-color: var
 
 footer { text-align: center; padding: 1rem; color: #888; font-size: 0.9rem; }
 
-/* --- SEÇÃO DE OTIMIZAÇÃO PARA CELULARES (COMPACTAÇÃO MÁXIMA) --- */
+/* --- SEÇÃO DE COMPACTAÇÃO MÁXIMA PARA CELULARES --- */
 @media (max-width: 600px) {
     header {
-        padding: 0.5rem 0.5rem 0.2rem 0.5rem; /* MUITO POUCO ESPAÇO INTERNO */
+        padding: 0.3rem 0.5rem 0.3rem 0.5rem; /* ESPAÇAMENTO MÍNIMO */
     }
     h1 {
-        font-size: 1rem; /* Título bem menor */
-        margin-bottom: 0.3rem; /* Quase sem espaço abaixo do título */
+        font-size: 0.9rem; /* TÍTULO AINDA MENOR */
+        margin-bottom: 0.3rem; 
     }
     
-    /* Faz os seletores de livro e capítulo ficarem lado a lado (em uma linha) */
+    /* ORGANIZAÇÃO DOS SELECTORES E PLAYER */
     nav { 
         flex-direction: row;
-        justify-content: space-between; /* Distribui bem os dois seletores */
+        justify-content: space-between; 
         gap: 0.3rem;
         margin-top: 0;
     }
 
     select {
-        font-size: 0.8rem;
-        padding: 0.3rem;
-        width: 49%; /* Faz os dois caberem certinho */
+        font-size: 0.75rem; /* Fonte menor */
+        padding: 0.2rem; /* Padding menor */
+        width: 47%; /* Garante que caibam */
+        height: 30px; /* Altura fixa menor */
     }
     
-    /* Coloca o player CONTÍNUO com os seletores (se houver espaço) ou logo abaixo */
+    /* COMPACTAÇÃO FINAL DO PLAYER */
     .player-controls {
-        margin-top: 0.5rem; 
+        margin-top: 0.3rem; 
         width: 100%;
-        gap: 0.5rem;
+        gap: 0.3rem;
+    }
+    .player-button {
+        width: 32px; /* O BOTÃO ESTÁ MUITO MENOR */
+        height: 32px; /* O BOTÃO ESTÁ MUITO MENOR */
+        font-size: 1rem; /* Ícone menor */
     }
     
     main { 
-        margin: 1rem 0.5rem; /* Reduz as margens laterais */
+        margin: 0.5rem 0.5rem; /* Reduz margens do conteúdo principal */
         padding: 0.5rem; 
     }
 }
