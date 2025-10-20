@@ -90,45 +90,43 @@ main { max-width: 800px; margin: 2rem auto; padding: 1rem; background-color: var
 
 footer { text-align: center; padding: 1rem; color: #888; font-size: 0.9rem; }
 
-/* --- SEÇÃO DE COMPACTAÇÃO MÁXIMA PARA CELULARES --- */
+/* --- COMPACTAÇÃO MÁXIMA PARA CELULARES --- */
 @media (max-width: 600px) {
     header {
-        padding: 0.3rem 0.5rem 0.3rem 0.5rem; /* ESPAÇAMENTO MÍNIMO */
+        padding: 0.3rem 0.5rem 0.3rem 0.5rem;
     }
     h1 {
-        font-size: 0.9rem; /* TÍTULO AINDA MENOR */
-        margin-bottom: 0.3rem; 
+        font-size: 0.9rem;
+        margin-bottom: 0.3rem;
     }
     
-    /* ORGANIZAÇÃO DOS SELECTORES E PLAYER */
     nav { 
         flex-direction: row;
-        justify-content: space-between; 
+        justify-content: space-between;
         gap: 0.3rem;
         margin-top: 0;
     }
 
     select {
-        font-size: 0.75rem; /* Fonte menor */
-        padding: 0.2rem; /* Padding menor */
-        width: 47%; /* Garante que caibam */
-        height: 30px; /* Altura fixa menor */
+        font-size: 0.75rem;
+        padding: 0.2rem;
+        width: 47%;
+        height: 30px;
     }
     
-    /* COMPACTAÇÃO FINAL DO PLAYER */
     .player-controls {
         margin-top: 0.3rem; 
         width: 100%;
         gap: 0.3rem;
     }
     .player-button {
-        width: 32px; /* O BOTÃO ESTÁ MUITO MENOR */
-        height: 32px; /* O BOTÃO ESTÁ MUITO MENOR */
-        font-size: 1rem; /* Ícone menor */
+        width: 32px;
+        height: 32px;
+        font-size: 1rem;
     }
     
     main { 
-        margin: 0.5rem 0.5rem; /* Reduz margens do conteúdo principal */
+        margin: 0.5rem 0.5rem;
         padding: 0.5rem; 
     }
 }
