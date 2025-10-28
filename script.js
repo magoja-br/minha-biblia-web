@@ -14,11 +14,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // --- Variáveis de Estado ---
     let indiceVersiculoAtual = 0;
-    let versiculosDoCapituloElementos = []; // Array de elementos <p>
-    let dadosVersiculosAtuais = []; // Array de objetos {versiculo: X, texto: "..."}
+    let versiculosDoCapituloElementos = []; 
+    let dadosVersiculosAtuais = []; 
     let estadoLeitura = 'parado'; 
-    let audioAtual = null; // Referência ao objeto Audio ATUALMENTE a tocar ou pausado
-    let audioAtualUrl = null; // Guarda o URL (Data URL) do audioAtual para comparação
+    let audioAtual = null; 
+    let audioAtualUrl = null; // Guarda o URL (Data URL) do audioAtual
     let timeoutLimpezaAudio = null; 
     let abortController = null; 
     let isAudioPlaying = false; 
@@ -51,21 +51,20 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Iniciar leitura ao clicar num versículo
     function iniciarLeituraDePontoEspecifico(event) {
-        if (isProcessingAudio) return; // Ignora se ocupado
+        if (isProcessingAudio) return; 
         const versiculoClicado = event.target.closest('.versiculo');
         if (!versiculoClicado || !versiculosDoCapituloElementos.length) return;
 
         const novoIndice = Array.from(versiculosDoCapituloElementos).indexOf(versiculoClicado);
         console.log(`Clique detectado no versículo índice: ${novoIndice}`);
         if (novoIndice !== -1) {
-            pararLeitura(false); // Para áudio atual, NÃO reseta índice para 0
-            indiceVersiculoAtual = novoIndice; // Define o novo ponto de partida
+            pararLeitura(false); 
+            indiceVersiculoAtual = novoIndice; 
 
             estadoLeitura = 'tocando';
             const btn = document.getElementById('play-pause-btn');
             if(btn) btn.innerHTML = '⏸️';
             console.log(`Iniciando leitura a partir do índice ${indiceVersiculoAtual}`);
-            // Adiciona pequeno delay para UI atualizar
             setTimeout(() => lerProximoVersiculo(), 50);
         }
     }
@@ -80,14 +79,14 @@ document.addEventListener('DOMContentLoaded', () => {
             option.textContent = livro.nome;
             livroSelect.appendChild(option);
         });
-        popularCapitulos(); // Chama para popular capítulos do (nenhum) livro selecionado
+        popularCapitulos(); 
     }
 
     // Popular lista de capítulos baseado no livro selecionado
     function popularCapitulos() {
         const nomeLivroSelecionado = livroSelect.value;
         console.log(`Livro selecionado: ${nomeLivroSelecionado}`);
-        capituloSelect.innerHTML = ''; // Limpa capítulos anteriores
+        capituloSelect.innerHTML = ''; 
         const livro = todosOsLivros.find(l => l.nome === nomeLivroSelecionado);
         if (livro && livro.capitulos) {
             console.log(`Carregando ${livro.capitulos.length} capítulos para ${nomeLivroSelecionado}`);
@@ -100,13 +99,13 @@ document.addEventListener('DOMContentLoaded', () => {
         } else if(nomeLivroSelecionado){
             console.warn(`Nenhum capítulo encontrado para ${nomeLivroSelecionado}`);
         }
-        exibirCapitulo(); // Mostra o primeiro capítulo (ou mensagem)
+        exibirCapitulo(); 
     }
 
     // Exibe os versículos do capítulo selecionado
     function exibirCapitulo() {
         console.log("Exibindo capítulo");
-        pararLeitura(true); // Para e reseta TUDO ao mudar de capítulo
+        pararLeitura(true); 
 
         areaLeitura.innerHTML = '';
         versiculosDoCapituloElementos = [];
@@ -134,7 +133,8 @@ document.addEventListener('DOMContentLoaded', () => {
             if(navElement) navElement.insertAdjacentHTML('afterend', playerHtml);
             else cabecalho.insertAdjacentHTML('beforeend', playerHtml);
 
-            // Adiciona listeners aos botões (usando debounce para evitar cliques rápidos)
+            // Adiciona listeners aos botões (usando debounce)
+            // *** CORREÇÃO: Usa debounce aqui ***
             document.getElementById('play-pause-btn').addEventListener('click', debounce(tocarPausarLeitura, 200));
             document.getElementById('stop-btn').addEventListener('click', debounce(() => pararLeitura(true), 200));
             console.log("Painel de controle adicionado.");
@@ -145,16 +145,15 @@ document.addEventListener('DOMContentLoaded', () => {
 
         if (capitulo && capitulo.versiculos && capitulo.versiculos.length > 0) {
             console.log(`Capítulo possui ${capitulo.versiculos.length} versículos`);
-            dadosVersiculosAtuais = capitulo.versiculos; // Guarda os dados dos versículos
+            dadosVersiculosAtuais = capitulo.versiculos; 
 
             capitulo.versiculos.forEach((v, index) => { 
                 const p = document.createElement('p');
                 p.className = 'versiculo';
-                p.dataset.index = index; // Adiciona índice para referência
+                p.dataset.index = index; 
                 p.innerHTML = `<span class="numero-versiculo">${v.versiculo}</span><span class="texto-versiculo">${v.texto}</span>`;
                 areaLeitura.appendChild(p);
             });
-            // Guarda os elementos DOM criados
             versiculosDoCapituloElementos = areaLeitura.querySelectorAll('.versiculo'); 
         } else {
             console.warn(`Versículos não encontrados para ${nomeLivro} ${numeroCapitulo}`);
@@ -169,7 +168,6 @@ document.addEventListener('DOMContentLoaded', () => {
              if (index === indiceVersiculoAtual && estadoLeitura === 'tocando') {
                  if (!p.classList.contains('lendo-agora')) {
                      p.classList.add('lendo-agora');
-                     // Só faz scroll se o elemento não estiver visível
                      const rect = p.getBoundingClientRect();
                      if (rect.top < 0 || rect.bottom > window.innerHeight) {
                          p.scrollIntoView({ behavior: 'smooth', block: 'center' });
@@ -213,7 +211,6 @@ document.addEventListener('DOMContentLoaded', () => {
             console.log("Iniciando/Retomando leitura");
             estadoLeitura = 'tocando';
             btn.innerHTML = '⏸️';
-            // isProcessingAudio será definido dentro de lerProximoVersiculo/lerTexto/play
 
             if (audioAtual && audioAtual.paused && !isAudioPlaying) {
                 console.log("Retomando áudio pausado...");
@@ -224,17 +221,16 @@ document.addEventListener('DOMContentLoaded', () => {
                     isAudioPlaying = true;
                     isProcessingAudio = false; 
                     toggleControlButtons(false); 
-                    atualizarDestaqueVersiculo(); // Reaplica destaque
+                    atualizarDestaqueVersiculo(); 
                 }).catch(e => {
                     console.error("Erro ao retomar play:", e);
                     isProcessingAudio = false; 
                     toggleControlButtons(false);
                     pararLeitura(false);
-                    // O alerta já deve vir do handler de erro do áudio
                 });
             } else {
                 console.log("Iniciando ciclo 'lerProximoVersiculo' a partir do índice:", indiceVersiculoAtual);
-                setTimeout(() => lerProximoVersiculo(), 50); // Inicia o ciclo
+                setTimeout(() => lerProximoVersiculo(), 50); 
             }
         }
     }
@@ -250,7 +246,6 @@ document.addEventListener('DOMContentLoaded', () => {
             timeoutLimpezaAudio = null;
         }
 
-        // Cancela fetch se estiver a buscar áudio
         if (isProcessingAudio && abortController) {
              console.log("Pausando durante processamento: Abortando fetch TTS.");
              abortController.abort();
@@ -258,7 +253,6 @@ document.addEventListener('DOMContentLoaded', () => {
              isProcessingAudio = false; 
         }
 
-        // Pausa o áudio se estiver a tocar
         if (audioAtual && !audioAtual.paused) {
             console.log("Pausando audioAtual");
             try { audioAtual.pause(); } catch(e) { console.warn("Erro ao pausar (ignorado):", e); }
@@ -280,7 +274,7 @@ document.addEventListener('DOMContentLoaded', () => {
     function pararLeitura(resetarIndice = false) {
         console.log(`Parando leitura, resetarIndice: ${resetarIndice}, estado ANTES: ${estadoLeitura}`);
         const estadoAnterior = estadoLeitura; 
-        estadoLeitura = 'parado'; // Define como parado imediatamente
+        estadoLeitura = 'parado'; 
         isAudioPlaying = false;
 
         // Cancela fetch pendente
@@ -288,7 +282,6 @@ document.addEventListener('DOMContentLoaded', () => {
             console.log("Parando durante processamento: Abortando fetch TTS.");
             abortController.abort();
             abortController = null;
-            // isProcessingAudio será resetado no final
         }
 
         // Limpa timeout de limpeza
@@ -297,16 +290,15 @@ document.addEventListener('DOMContentLoaded', () => {
             timeoutLimpezaAudio = null;
         }
 
-        const audioParaLimpar = audioAtual; // Guarda referência local
-        const urlParaLimpar = audioAtualUrl; // Guarda URL local
-        audioAtual = null; // Anula referência global
+        const audioParaLimpar = audioAtual; 
+        const urlParaLimpar = audioAtualUrl; 
+        audioAtual = null; 
         audioAtualUrl = null;
 
         if (audioParaLimpar) {
             console.log("Iniciando processo de parada para audioParaLimpar existente.");
             
             // *** CORREÇÃO: Remove listeners PRIMEIRO ***
-            // Remove os handlers genéricos para evitar chamadas tardias
             audioParaLimpar.onended = null; 
             audioParaLimpar.onerror = null;
 
@@ -320,18 +312,16 @@ document.addEventListener('DOMContentLoaded', () => {
             }
 
             console.log("Agendando limpeza final do áudio anterior (src)...");
-            // Não precisamos revogar Data URLs
+            // Não revogar Data URLs
             
             setTimeout(() => {
                 console.log("Executando limpeza final atrasada (src='').");
-                // Tenta limpar src para liberar recursos, mas verifica se ainda é o mesmo objeto
                 try { 
-                    // Verifica se audioParaLimpar ainda existe E se a src é a que esperávamos
                     if (audioParaLimpar && audioParaLimpar.src === urlParaLimpar) {
                         audioParaLimpar.src = ''; 
                     }
                 } catch(e) { console.warn("Erro (ignorado) ao limpar src do áudio:", e); }
-            }, 300); // Delay pequeno
+            }, 300); 
         }
 
         // Reset do índice e scroll
@@ -347,7 +337,6 @@ document.addEventListener('DOMContentLoaded', () => {
         const btn = document.getElementById('play-pause-btn');
         if (btn) btn.innerHTML = '▶️';
         
-        // Garante liberação do estado e botões
         isProcessingAudio = false;
         toggleControlButtons(false);
 
