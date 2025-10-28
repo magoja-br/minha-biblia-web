@@ -134,7 +134,7 @@ document.addEventListener('DOMContentLoaded', () => {
             if(navElement) navElement.insertAdjacentHTML('afterend', playerHtml);
             else cabecalho.insertAdjacentHTML('beforeend', playerHtml);
 
-            // Adiciona listeners aos botões
+            // Adiciona listeners aos botões (usando debounce para evitar cliques rápidos)
             document.getElementById('play-pause-btn').addEventListener('click', debounce(tocarPausarLeitura, 200));
             document.getElementById('stop-btn').addEventListener('click', debounce(() => pararLeitura(true), 200));
             console.log("Painel de controle adicionado.");
@@ -326,6 +326,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 console.log("Executando limpeza final atrasada (src='').");
                 // Tenta limpar src para liberar recursos, mas verifica se ainda é o mesmo objeto
                 try { 
+                    // Verifica se audioParaLimpar ainda existe E se a src é a que esperávamos
                     if (audioParaLimpar && audioParaLimpar.src === urlParaLimpar) {
                         audioParaLimpar.src = ''; 
                     }
@@ -458,7 +459,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 try { audioAtual.pause(); } catch(e){}
             }
             audioAtual = null;
-            audioAtualUrl = null;
+            audioAtualUrl = null; 
         }
         // Cancela fetch anterior se existir
         if (isProcessingAudio && abortController) {
@@ -488,41 +489,57 @@ document.addEventListener('DOMContentLoaded', () => {
              console.log(`Áudio encontrado no cache para índice ${indiceVersiculoAtual}.`);
              const audioSrcFromCache = audioCache.get(cacheKey); 
 
+             if (audioAtual) {
+                 console.warn("Limpando referência de áudio anterior (cache).");
+                 audioAtual = null; 
+                 audioAtualUrl = null;
+             }
+
              audioAtual = new Audio(audioSrcFromCache); 
-             audioAtualUrl = audioSrcFromCache; 
+             audioAtualUrl = audioSrcFromCache; // Guarda o URL
              console.log("Novo objeto audioAtual criado (cache):", audioAtual);
              isAudioPlaying = false; 
 
              return new Promise((resolve, reject) => {
-                 // *** CORREÇÃO TYPEERROR: Handlers definidos ANTES ***
+                 // *** CORREÇÃO TYPEERROR: Handlers definidos ANTES e mais robustos ***
                  const handleErrorCache = (e) => {
                     console.error("Erro no áudio do cache:", e);
                     isAudioPlaying = false; isProcessingAudio = false;
-                    audioCache.delete(cacheKey); 
+                    audioCache.delete(cacheKey); // Remove do cache se deu erro
                     
+                    // Verifica se o áudio que deu erro é o 'audioAtual' antes de anular
                     if (audioAtual && audioAtual.src === audioSrcFromCache) {
-                        audioAtual = null; audioAtualUrl = null;
+                        audioAtual = null;
+                        audioAtualUrl = null;
                     }
                     
-                    // Remove listeners com segurança
+                    // Remove listeners com segurança, verificando e.target
                     if (e && e.target) {
                         e.target.removeEventListener('ended', handleEndedCache);
                         e.target.removeEventListener('error', handleErrorCache);
                     } else { console.warn("handleErrorCache: e.target indefinido."); }
 
                     toggleControlButtons(false); 
-                    if (onErrorCallback) onErrorCallback(e); 
+                    if (onErrorCallback) onErrorCallback(e); // Chama o callback de erro principal
                     reject(e);
                  };
                  
                  const handleEndedCache = (e) => {
                     console.log(`Evento 'ended' (cache) disparado.`);
                     isAudioPlaying = false;
+                    
+                    // Verifica se o áudio que terminou é o 'audioAtual' antes de anular
                     if (audioAtual && audioAtual.src === audioSrcFromCache) {
-                        audioAtual = null; audioAtualUrl = null;
+                        audioAtual = null;
+                        audioAtualUrl = null;
                     }
-                    e.target.removeEventListener('ended', handleEndedCache);
-                    e.target.removeEventListener('error', handleErrorCache);
+                    
+                    // Remove listeners com segurança
+                    if (e && e.target) {
+                        e.target.removeEventListener('ended', handleEndedCache);
+                        e.target.removeEventListener('error', handleErrorCache);
+                    } else { console.warn("handleEndedCache: e.target indefinido."); }
+                    
                     if (onEndedCallback) onEndedCallback(e);
                     resolve();
                  };
@@ -536,9 +553,10 @@ document.addEventListener('DOMContentLoaded', () => {
                      isAudioPlaying = true;
                      isProcessingAudio = false; 
                      toggleControlButtons(false);
+                     // Promessa resolve no handleEndedCache
                  }).catch(playError => {
                      console.error("Erro direto no play() (cache):", playError);
-                     handleErrorCache({ target: audioAtual }); 
+                     handleErrorCache({ target: audioAtual }); // Passa o objeto audioAtual como target
                  });
              });
         }
@@ -588,6 +606,12 @@ document.addEventListener('DOMContentLoaded', () => {
                 // *** USA E CACHEIA DATA URL ***
                 const audioSrc = "data:audio/mp3;base64," + data.audioContent;
                 
+                 if (audioAtual) {
+                     console.warn("Limpando referência de áudio anterior (backend).");
+                     audioAtual = null; // Só anula
+                     audioAtualUrl = null;
+                 }
+
                 audioAtual = new Audio(audioSrc);
                 audioAtualUrl = audioSrc; // Guarda URL
                 console.log("Novo objeto audioAtual criado (backend):", audioAtual);
@@ -598,11 +622,12 @@ document.addEventListener('DOMContentLoaded', () => {
                 
 
                 return new Promise((resolve, reject) => {
-                    // *** CORREÇÃO TYPEERROR: Handlers definidos ANTES ***
+                    // *** CORREÇÃO TYPEERROR: Handlers definidos ANTES e mais robustos ***
                     const handleErrorBackend = (e) => {
                         console.error("Erro no elemento Audio (backend):", e);
                         isAudioPlaying = false; isProcessingAudio = false;
                         
+                        // Verifica se o áudio que deu erro é o 'audioAtual' antes de anular
                         if (audioAtual && audioAtual.src === audioSrc) {
                              audioAtual = null; audioAtualUrl = null;
                          } else { console.warn("handleErrorBackend: audioAtual global mudou ou era null."); }
@@ -615,7 +640,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
                         toggleControlButtons(false); 
                         alert("Erro ao carregar ou reproduzir o áudio do servidor.");
-                        if (onErrorCallback) onErrorCallback(e); 
+                        if (onErrorCallback) onErrorCallback(e); // Chama o callback de erro principal
                         reject(e);
                     };
 
@@ -623,15 +648,18 @@ document.addEventListener('DOMContentLoaded', () => {
                         console.log(`Evento 'ended' (backend) disparado.`);
                         isAudioPlaying = false;
                         
+                        // Verifica se o áudio que terminou é o 'audioAtual' antes de anular
                         if (audioAtual && audioAtual.src === audioSrc) {
                              audioAtual = null; audioAtualUrl = null;
                          } else if (!audioAtual) {
                              console.log("Referência global audioAtual já era null em ended (backend).");
                          } else { console.warn("handleEndedBackend: audioAtual global mudou!"); }
 
-                        // Remove listeners
-                        e.target.removeEventListener('ended', handleEndedBackend);
-                        e.target.removeEventListener('error', handleErrorBackend);
+                        // Remove listeners com segurança
+                        if (e && e.target) {
+                           e.target.removeEventListener('ended', handleEndedBackend);
+                           e.target.removeEventListener('error', handleErrorBackend);
+                        } else { console.warn("handleEndedBackend: e.target indefinido."); }
 
                         if (onEndedCallback) onEndedCallback(e);
                         resolve();
@@ -649,7 +677,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         // Promessa resolve no handleEndedBackend
                     }).catch(playError => {
                         console.error("Erro direto no play() (backend):", playError);
-                        handleErrorBackend({ target: audioAtual }); 
+                        handleErrorBackend({ target: audioAtual }); // Passa o objeto audioAtual como target
                     });
                 });
 
@@ -683,6 +711,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Função auxiliar para converter Base64 para Blob (usada apenas no download)
     function b64toBlob(b64Data, contentType = '', sliceSize = 512) {
+        // (Esta função não precisa de alterações)
         try {
              if (!b64Data || typeof b64Data !== 'string' || !/^[A-Za-z0-9+/=]+$/.test(b64Data.substring(0, 1024))) {
                   console.error("String Base64 inválida recebida:", b64Data.substring(0, 100) + "..."); 
@@ -744,6 +773,20 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
     // --- FIM DA CONEXÃO DO SLIDER ---
+    
+    // *** ADICIONA A DEFINIÇÃO DA FUNÇÃO DEBOUNCE ***
+    function debounce(func, wait) {
+        let timeout;
+        return function executedFunction(...args) {
+            const later = () => {
+                clearTimeout(timeout);
+                func(...args);
+            };
+            clearTimeout(timeout);
+            timeout = setTimeout(later, wait);
+        };
+    }
+    // *** FIM DA ADIÇÃO DO DEBOUNCE ***
 
     // Inicia o processo carregando a lista de livros
     popularLivros();
