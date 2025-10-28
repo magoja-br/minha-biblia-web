@@ -227,10 +227,11 @@ document.addEventListener('DOMContentLoaded', () => {
                     isProcessingAudio = false; 
                     toggleControlButtons(false);
                     pararLeitura(false);
+                    // O alerta já deve vir do handler de erro do áudio
                 });
             } else {
                 console.log("Iniciando ciclo 'lerProximoVersiculo' a partir do índice:", indiceVersiculoAtual);
-                setTimeout(() => lerProximoVersiculo(), 50); 
+                setTimeout(() => lerProximoVersiculo(), 50); // Inicia o ciclo
             }
         }
     }
