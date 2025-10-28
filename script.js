@@ -2,10 +2,10 @@ document.addEventListener('DOMContentLoaded', () => {
     console.log('DOM carregado, iniciando aplicação com Google Cloud TTS');
 
     // --- CHAVE DE API (REMOVIDA/COMENTADA) ---
-    // const apiKey = "chave";  // Descomente e adicione sua chave real do Google Cloud TTS
+    // const apiKey = "chave"; 
     // --- VOZ E VELOCIDADE ---
-    const NOME_DA_VOZ = 'pt-BR-Standard-A';  // Mudei para uma voz padrão válida; teste com a sua
-    let taxaDeFala = 1.0;
+    const NOME_DA_VOZ = 'pt-BR-Chirp3-HD-Algieba'; // Voz padrão fixa
+    let taxaDeFala = 1.0; 
 
     const cabecalho = document.querySelector('header');
     const livroSelect = document.getElementById('livro-select');
@@ -14,15 +14,15 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // --- Variáveis de Estado ---
     let indiceVersiculoAtual = 0;
-    let versiculosDoCapituloElementos = [];
-    let dadosVersiculosAtuais = [];
-    let estadoLeitura = 'parado';
-    let audioAtual = null;
-    let audioAtualUrl = null;
-    let timeoutLimpezaAudio = null;
-    let abortController = null;
-    let isAudioPlaying = false;
-    let isProcessingAudio = false;
+    let versiculosDoCapituloElementos = []; 
+    let dadosVersiculosAtuais = []; 
+    let estadoLeitura = 'parado'; 
+    let audioAtual = null; 
+    let audioAtualUrl = null; // Guarda o URL (Data URL) do audioAtual
+    let timeoutLimpezaAudio = null; 
+    let abortController = null; 
+    let isAudioPlaying = false; 
+    let isProcessingAudio = false; 
 
     // Cache de áudio (usará Data URL)
     const audioCache = new Map();
@@ -46,24 +46,24 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Limpeza ao fechar a janela
     window.addEventListener('beforeunload', () => {
-        pararLeitura(true);
+        pararLeitura(true); 
     });
 
     // Iniciar leitura ao clicar num versículo
     function iniciarLeituraDePontoEspecifico(event) {
-        if (isProcessingAudio) return;
+        if (isProcessingAudio) return; 
         const versiculoClicado = event.target.closest('.versiculo');
         if (!versiculoClicado || !versiculosDoCapituloElementos.length) return;
 
         const novoIndice = Array.from(versiculosDoCapituloElementos).indexOf(versiculoClicado);
         console.log(`Clique detectado no versículo índice: ${novoIndice}`);
         if (novoIndice !== -1) {
-            pararLeitura(false);
-            indiceVersiculoAtual = novoIndice;
+            pararLeitura(false); 
+            indiceVersiculoAtual = novoIndice; 
 
             estadoLeitura = 'tocando';
             const btn = document.getElementById('play-pause-btn');
-            if (btn) btn.innerHTML = '⏸️';
+            if(btn) btn.innerHTML = '⏸️';
             console.log(`Iniciando leitura a partir do índice ${indiceVersiculoAtual}`);
             setTimeout(() => lerProximoVersiculo(), 50);
         }
@@ -79,14 +79,14 @@ document.addEventListener('DOMContentLoaded', () => {
             option.textContent = livro.nome;
             livroSelect.appendChild(option);
         });
-        popularCapitulos();
+        popularCapitulos(); 
     }
 
     // Popular lista de capítulos baseado no livro selecionado
     function popularCapitulos() {
         const nomeLivroSelecionado = livroSelect.value;
         console.log(`Livro selecionado: ${nomeLivroSelecionado}`);
-        capituloSelect.innerHTML = '';
+        capituloSelect.innerHTML = ''; 
         const livro = todosOsLivros.find(l => l.nome === nomeLivroSelecionado);
         if (livro && livro.capitulos) {
             console.log(`Carregando ${livro.capitulos.length} capítulos para ${nomeLivroSelecionado}`);
@@ -96,16 +96,16 @@ document.addEventListener('DOMContentLoaded', () => {
                 option.textContent = `Capítulo ${cap.capitulo}`;
                 capituloSelect.appendChild(option);
             });
-        } else if (nomeLivroSelecionado) {
+        } else if(nomeLivroSelecionado){
             console.warn(`Nenhum capítulo encontrado para ${nomeLivroSelecionado}`);
         }
-        exibirCapitulo();
+        exibirCapitulo(); 
     }
 
     // Exibe os versículos do capítulo selecionado
     function exibirCapitulo() {
         console.log("Exibindo capítulo");
-        pararLeitura(true);
+        pararLeitura(true); 
 
         areaLeitura.innerHTML = '';
         versiculosDoCapituloElementos = [];
@@ -127,77 +127,79 @@ document.addEventListener('DOMContentLoaded', () => {
         const capitulo = livro ? livro.capitulos.find(c => c.capitulo === numeroCapitulo) : null;
 
         // Cria o painel de controle
-        if (capitulo && capitulo.versiculos && capitulo.versiculos.length > 0) {
+        if(capitulo && capitulo.versiculos && capitulo.versiculos.length > 0){
             const playerHtml = `<div id="player-container" class="player-controls"><button id="play-pause-btn" class="player-button" title="Tocar / Pausar">▶️</button><button id="stop-btn" class="player-button" title="Parar">⏹️</button></div>`;
             const navElement = cabecalho.querySelector('nav');
-            if (navElement) navElement.insertAdjacentHTML('afterend', playerHtml);
+            if(navElement) navElement.insertAdjacentHTML('afterend', playerHtml);
             else cabecalho.insertAdjacentHTML('beforeend', playerHtml);
 
             // Adiciona listeners aos botões (usando debounce)
+            // *** CORREÇÃO: Usa debounce aqui ***
             document.getElementById('play-pause-btn').addEventListener('click', debounce(tocarPausarLeitura, 200));
             document.getElementById('stop-btn').addEventListener('click', debounce(() => pararLeitura(true), 200));
             console.log("Painel de controle adicionado.");
         } else {
-            console.log("Capítulo sem versículos, painel de controle não será adicionado.");
+             console.log("Capítulo sem versículos, painel de controle não será adicionado.");
         }
+
 
         if (capitulo && capitulo.versiculos && capitulo.versiculos.length > 0) {
             console.log(`Capítulo possui ${capitulo.versiculos.length} versículos`);
-            dadosVersiculosAtuais = capitulo.versiculos;
+            dadosVersiculosAtuais = capitulo.versiculos; 
 
-            capitulo.versiculos.forEach((v, index) => {
+            capitulo.versiculos.forEach((v, index) => { 
                 const p = document.createElement('p');
                 p.className = 'versiculo';
-                p.dataset.index = index;
+                p.dataset.index = index; 
                 p.innerHTML = `<span class="numero-versiculo">${v.versiculo}</span><span class="texto-versiculo">${v.texto}</span>`;
                 areaLeitura.appendChild(p);
             });
-            versiculosDoCapituloElementos = areaLeitura.querySelectorAll('.versiculo');
+            versiculosDoCapituloElementos = areaLeitura.querySelectorAll('.versiculo'); 
         } else {
             console.warn(`Versículos não encontrados para ${nomeLivro} ${numeroCapitulo}`);
             areaLeitura.insertAdjacentHTML('beforeend', '<p class="aviso">Capítulo não encontrado ou sem versículos.</p>');
         }
     }
-
+    
     // Adiciona/Remove classe CSS para destacar o versículo atual e faz scroll
-    function atualizarDestaqueVersiculo() {
-        let versiculoDestacado = false;
-        versiculosDoCapituloElementos.forEach((p, index) => {
-            if (index === indiceVersiculoAtual && estadoLeitura === 'tocando') {
-                if (!p.classList.contains('lendo-agora')) {
-                    p.classList.add('lendo-agora');
-                    const rect = p.getBoundingClientRect();
-                    if (rect.top < 0 || rect.bottom > window.innerHeight) {
-                        p.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                    }
-                    console.log(`Destaque aplicado ao índice ${index}`);
-                }
-                versiculoDestacado = true;
-            } else {
-                if (p.classList.contains('lendo-agora')) {
-                    p.classList.remove('lendo-agora');
-                    console.log(`Destaque removido do índice ${index}`);
-                }
-            }
-        });
-        return versiculoDestacado;
-    }
+     function atualizarDestaqueVersiculo() {
+         let versiculoDestacado = false;
+         versiculosDoCapituloElementos.forEach((p, index) => {
+             if (index === indiceVersiculoAtual && estadoLeitura === 'tocando') {
+                 if (!p.classList.contains('lendo-agora')) {
+                     p.classList.add('lendo-agora');
+                     const rect = p.getBoundingClientRect();
+                     if (rect.top < 0 || rect.bottom > window.innerHeight) {
+                         p.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                     }
+                     console.log(`Destaque aplicado ao índice ${index}`);
+                 }
+                 versiculoDestacado = true;
+             } else {
+                 if (p.classList.contains('lendo-agora')) {
+                     p.classList.remove('lendo-agora');
+                     console.log(`Destaque removido do índice ${index}`);
+                 }
+             }
+         });
+         return versiculoDestacado;
+     }
 
     // Botão Tocar/Pausar
     function tocarPausarLeitura() {
         if (isProcessingAudio) {
-            console.warn("Play/Pause ignorado: processando áudio.");
-            return;
+             console.warn("Play/Pause ignorado: processando áudio.");
+             return; 
         }
         if (dadosVersiculosAtuais.length === 0) {
             console.warn("Nenhum versículo para ler.");
             return;
         }
-
+        
         const btn = document.getElementById('play-pause-btn');
         if (!btn) { console.error("Botão Play/Pause não encontrado!"); return; }
 
-        if (timeoutLimpezaAudio) {
+        if(timeoutLimpezaAudio) {
             clearTimeout(timeoutLimpezaAudio);
             timeoutLimpezaAudio = null;
         }
@@ -212,23 +214,23 @@ document.addEventListener('DOMContentLoaded', () => {
 
             if (audioAtual && audioAtual.paused && !isAudioPlaying) {
                 console.log("Retomando áudio pausado...");
-                isProcessingAudio = true;
+                isProcessingAudio = true; 
                 toggleControlButtons(true);
                 audioAtual.play().then(() => {
                     console.log("Retomada do play bem-sucedida.");
                     isAudioPlaying = true;
-                    isProcessingAudio = false;
-                    toggleControlButtons(false);
-                    atualizarDestaqueVersiculo();
+                    isProcessingAudio = false; 
+                    toggleControlButtons(false); 
+                    atualizarDestaqueVersiculo(); 
                 }).catch(e => {
-                    console.error("Erro ao retomar play:", e.message || e);
-                    isProcessingAudio = false;
+                    console.error("Erro ao retomar play:", e);
+                    isProcessingAudio = false; 
                     toggleControlButtons(false);
                     pararLeitura(false);
                 });
             } else {
                 console.log("Iniciando ciclo 'lerProximoVersiculo' a partir do índice:", indiceVersiculoAtual);
-                setTimeout(() => lerProximoVersiculo(), 50); // Inicia o ciclo
+                setTimeout(() => lerProximoVersiculo(), 50); 
             }
         }
     }
@@ -237,26 +239,23 @@ document.addEventListener('DOMContentLoaded', () => {
     function pausarLeitura() {
         console.log("Função pausarLeitura chamada");
         estadoLeitura = 'pausado';
-        isAudioPlaying = false;
+        isAudioPlaying = false; 
 
-        if (timeoutLimpezaAudio) {
+        if(timeoutLimpezaAudio) {
             clearTimeout(timeoutLimpezaAudio);
             timeoutLimpezaAudio = null;
         }
 
         if (isProcessingAudio && abortController) {
-            console.log("Pausando durante processamento: Abortando fetch TTS.");
-            abortController.abort();
-            abortController = null;
-            isProcessingAudio = false;
+             console.log("Pausando durante processamento: Abortando fetch TTS.");
+             abortController.abort();
+             abortController = null;
+             isProcessingAudio = false; 
         }
 
         if (audioAtual && !audioAtual.paused) {
             console.log("Pausando audioAtual");
-            try {
-                audioAtual.pause();
-                audioAtual.currentTime = 0; // Reset para evitar bugs em retomada
-            } catch (e) { console.warn("Erro ao pausar (ignorado):", e.message || e); }
+            try { audioAtual.pause(); } catch(e) { console.warn("Erro ao pausar (ignorado):", e); }
         } else {
             console.log("Pausar chamado, mas áudio já pausado/não existe ou processamento foi cancelado.");
         }
@@ -267,15 +266,15 @@ document.addEventListener('DOMContentLoaded', () => {
         if (versiculoLendo) {
             versiculoLendo.classList.remove('lendo-agora');
         }
-
+        
         toggleControlButtons(false); // Garante botões habilitados
     }
 
-    // Função PararLeitura (Mais Robusta)
+    // *** MODIFICADO: Função PararLeitura (Mais Robusta) ***
     function pararLeitura(resetarIndice = false) {
         console.log(`Parando leitura, resetarIndice: ${resetarIndice}, estado ANTES: ${estadoLeitura}`);
-        const estadoAnterior = estadoLeitura;
-        estadoLeitura = 'parado';
+        const estadoAnterior = estadoLeitura; 
+        estadoLeitura = 'parado'; 
         isAudioPlaying = false;
 
         // Cancela fetch pendente
@@ -286,208 +285,310 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         // Limpa timeout de limpeza
-        if (timeoutLimpezaAudio) {
+        if(timeoutLimpezaAudio) {
             clearTimeout(timeoutLimpezaAudio);
             timeoutLimpezaAudio = null;
         }
 
-        const audioParaLimpar = audioAtual;
-        const urlParaLimpar = audioAtualUrl;
-        audioAtual = null;
+        const audioParaLimpar = audioAtual; 
+        const urlParaLimpar = audioAtualUrl; 
+        audioAtual = null; 
         audioAtualUrl = null;
 
         if (audioParaLimpar) {
             console.log("Iniciando processo de parada para audioParaLimpar existente.");
-
-            // Remove listeners PRIMEIRO
-            audioParaLimpar.onended = null;
+            
+            // *** CORREÇÃO: Remove listeners PRIMEIRO ***
+            audioParaLimpar.onended = null; 
             audioParaLimpar.onerror = null;
 
             if (!audioParaLimpar.paused) {
                 try {
                     audioParaLimpar.pause();
-                    audioParaLimpar.currentTime = 0;
                     console.log("Audio pausado imediatamente.");
-                } catch (e) { console.warn("Erro ao pausar áudio durante limpeza (ignorado):", e.message || e); }
+                } catch (e) { console.warn("Erro ao pausar áudio durante limpeza (ignorado):", e); }
             } else if (estadoAnterior === 'tocando') {
                 console.warn("Parar chamado enquanto estado era 'tocando', mas áudio já estava pausado?");
             }
 
-            console.log("Agendando limpeza final do áudio anterior...");
+            console.log("Agendando limpeza final do áudio anterior (src)...");
+            // Não revogar Data URLs
+            
             setTimeout(() => {
-                console.log("Executando limpeza final atrasada.");
-                try {
-                    if (audioParaLimpar) {
-                        audioParaLimpar.load(); // Melhor que src = '' para reset sem erro
+                console.log("Executando limpeza final atrasada (src='').");
+                try { 
+                    // Verifica se audioParaLimpar ainda existe E se a src é a que esperávamos
+                    if (audioParaLimpar && audioParaLimpar.src === urlParaLimpar) {
+                        audioParaLimpar.src = ''; 
                     }
-                } catch (e) { console.warn("Erro (ignorado) ao limpar áudio:", e.message || e); }
-            }, 300);
+                } catch(e) { console.warn("Erro (ignorado) ao limpar src do áudio:", e); }
+            }, 300); 
         }
 
         // Reset do índice e scroll
         if (resetarIndice) {
             console.log("Resetando índice para 0.");
             indiceVersiculoAtual = 0;
-            areaLeitura.scrollTop = 0;
+            areaLeitura.scrollTo({ top: 0, behavior: 'smooth' });
         }
 
-        // Remove destaque
+        // Atualização da UI
         const versiculoLendo = document.querySelector('.lendo-agora');
-        if (versiculoLendo) {
-            versiculoLendo.classList.remove('lendo-agora');
-        }
-
-        toggleControlButtons(false);
+        if (versiculoLendo) versiculoLendo.classList.remove('lendo-agora');
+        const btn = document.getElementById('play-pause-btn');
+        if (btn) btn.innerHTML = '▶️';
+        
         isProcessingAudio = false;
-        console.log("Leitura parada completa. Índice final:", indiceVersiculoAtual);
+        toggleControlButtons(false);
+
+        console.log(`Leitura parada completa. Índice final: ${indiceVersiculoAtual}`);
+    }
+    // --- FIM DA FUNÇÃO PARAR LEITURA ---
+
+    // Habilita/Desabilita botões
+    function toggleControlButtons(disabled) {
+        const playPauseBtn = document.getElementById('play-pause-btn');
+        const stopBtn = document.getElementById('stop-btn');
+        if(playPauseBtn) playPauseBtn.disabled = disabled;
+        if(stopBtn) stopBtn.disabled = disabled;
     }
 
-    // Função para ler o próximo versículo
-    function lerProximoVersiculo() {
-        if (estadoLeitura !== 'tocando' || indiceVersiculoAtual >= dadosVersiculosAtuais.length) {
-            console.log("Ciclo interrompido: estado não 'tocando' ou fim do capítulo.");
-            pararLeitura(true);
+
+    // --- FUNÇÃO DE AVANÇO PARA O PRÓXIMO VERSÍCULO ---
+    async function lerProximoVersiculo() {
+        if (estadoLeitura !== 'tocando') {
+             console.log("lerProximoVersiculo chamado, mas estado não é 'tocando'. Parando.");
+             isProcessingAudio = false; 
+             toggleControlButtons(false); 
+             return;
+        }
+
+        if (indiceVersiculoAtual >= dadosVersiculosAtuais.length) {
+            console.log('Fim do capítulo alcançado.');
+            pararLeitura(true); 
+            alert("Leitura do capítulo concluída!");
             return;
         }
 
-        atualizarDestaqueVersiculo();
+        const versiculoElementoAtual = versiculosDoCapituloElementos[indiceVersiculoAtual];
+        const dadosVersiculo = dadosVersiculosAtuais[indiceVersiculoAtual];
+        if (!dadosVersiculo || typeof dadosVersiculo.texto === 'undefined') {
+            console.error(`Erro: Dados inválidos para o índice ${indiceVersiculoAtual}. Parando.`);
+            pararLeitura(true);
+            return;
+        }
+        const textoParaLer = dadosVersiculo.texto;
 
-        console.log(`Iniciando chamada para índice ${indiceVersiculoAtual}`);
-        isProcessingAudio = true;
-        toggleControlButtons(true);
+        atualizarDestaqueVersiculo(); // Adiciona destaque e scroll
 
-        obterAudioParaVersiculo(indiceVersiculoAtual, taxaDeFala)
-            .then(() => {
-                console.log(`Áudio do índice ${indiceVersiculoAtual} terminou. Avançando.`);
-                indiceVersiculoAtual++;
-                lerProximoVersiculo();
-            })
-            .catch(error => {
-                console.error(`Erro capturado no ciclo lerProximoVersiculo (índice ${indiceVersiculoAtual}):`, error.message || error);
-                pararLeitura(false);
-            });
+        try {
+            // *** CORREÇÃO: Callbacks definidos aqui para ter acesso a 'versiculoElementoAtual' ***
+            const onAudioEndCallback = (event) => {
+                console.log(`onAudioEndCallback: Áudio do índice ${indiceVersiculoAtual} terminou. Estado atual: ${estadoLeitura}`);
+                isAudioPlaying = false; 
+                
+                // Limpa os listeners com segurança
+                if (event && event.target) {
+                    event.target.removeEventListener('ended', onAudioEndCallback);
+                    event.target.removeEventListener('error', onAudioErrorCallback);
+                }
+
+                if (versiculoElementoAtual) { // Usa a variável capturada no escopo
+                    versiculoElementoAtual.classList.remove('lendo-agora');
+                }
+
+                if (estadoLeitura === 'tocando') {
+                    indiceVersiculoAtual++; // Avança para o próximo
+                    // Chama o próximo ciclo
+                    setTimeout(() => lerProximoVersiculo(), 100); // Pequena pausa antes do próximo
+                } else {
+                    console.log(`onAudioEndCallback: Estado mudou para ${estadoLeitura}. Interrompendo ciclo.`);
+                    isProcessingAudio = false; 
+                    toggleControlButtons(false); 
+                }
+            };
+            
+            // Define o callback de erro
+            const onAudioErrorCallback = (errorEvent) => {
+                // *** CORREÇÃO: Não imprime erro duplicado, apenas loga a chamada ***
+                console.warn("Callback de erro do áudio chamado:", errorEvent ? errorEvent.type : 'Evento desconhecido'); 
+                isAudioPlaying = false; isProcessingAudio = false;
+                
+                // Limpa os listeners com segurança
+                if (errorEvent && errorEvent.target) {
+                    errorEvent.target.removeEventListener('ended', onAudioEndCallback);
+                    errorEvent.target.removeEventListener('error', onAudioErrorCallback);
+                }
+
+                toggleControlButtons(false); 
+                // O alerta já é feito em lerTexto
+                if (estadoLeitura !== 'parado') { // Só para se não já estiver parado
+                  pararLeitura(false); // Para a leitura em caso de erro
+                }
+            };
+
+            console.log(`Iniciando chamada para índice ${indiceVersiculoAtual}`);
+            // A função lerTexto agora retorna uma promessa que resolve ao fim do áudio
+            await lerTexto(textoParaLer, onAudioEndCallback, onAudioErrorCallback); 
+
+        } catch (error) {
+            console.error(`Erro capturado no ciclo lerProximoVersiculo (índice ${indiceVersiculoAtual}):`, error ? error.message : 'Erro desconhecido');
+            // pararLeitura já deve ter sido chamado dentro de lerTexto ou no callback de erro
+            if (estadoLeitura !== 'parado') {
+                 pararLeitura(false); 
+            }
+        }
     }
+    // --- FIM DA FUNÇÃO DE AVANÇO ---
 
-    // Função para obter e tocar áudio (com cache)
-    function obterAudioParaVersiculo(indice, speed) {
-        const versiculo = dadosVersiculosAtuais[indice];
-        if (!versiculo) return Promise.reject(new Error('Versículo inválido'));
 
-        const textoSanitizado = versiculo.texto.replace(/[\n\r]+/g, ' ').trim();
-        const cacheKey = `${indice}_${speed.toFixed(2)}`; // Chave única por índice e velocidade
+    // *** FUNÇÃO DE ÁUDIO (CHAMA O BACKEND E USA DATA URL PARA CACHE - CORRIGIDA) ***
+    function lerTexto(texto, onEndedCallback, onErrorCallback) { 
+
+        // Limpa áudio anterior se existir E estiver a tocar/pausado
+        if (audioAtual && (isAudioPlaying || estadoLeitura === 'pausado')) {
+            console.warn("Áudio anterior existente, parando antes de iniciar novo.");
+            if(audioAtual && !audioAtual.paused) {
+                try { audioAtual.pause(); } catch(e){}
+            }
+            // Remove listeners antigos para evitar chamadas duplicadas
+            audioAtual.onended = null;
+            audioAtual.onerror = null;
+            audioAtual = null;
+            audioAtualUrl = null; 
+        }
+        // Cancela fetch anterior se existir
+        if (isProcessingAudio && abortController) {
+             console.warn("Já processando áudio, abortando fetch anterior.");
+             abortController.abort();
+             isProcessingAudio = false; // Permite nova tentativa
+        }
+
+        isProcessingAudio = true; 
+        toggleControlButtons(true); 
 
         abortController = new AbortController();
         const signal = abortController.signal;
 
-        // Callback de ended
-        const onEndedCallback = () => {
-            console.log(`onAudioEndCallback: Áudio do índice ${indice} terminou. Estado atual: ${estadoLeitura}`);
-            if (estadoLeitura !== 'tocando') {
-                console.log("onAudioEndCallback: Estado mudou para parado. Interrompendo ciclo.");
-                return;
-            }
-        };
+        const textoSanitizado = texto.trim(); // Sanitização básica
+        if (!textoSanitizado) {
+             console.warn("Texto vazio fornecido para lerTexto.");
+             isProcessingAudio = false;
+             toggleControlButtons(false);
+             if (onEndedCallback) { // Adiciona verificação
+                try { onEndedCallback(); } catch(e) { console.error("Erro no onEndedCallback (texto vazio)", e); }
+             }
+             return Promise.resolve(); 
+        }
 
-        // Callback de error
-        const onErrorCallback = (e) => {
-            console.error(`Erro no elemento Audio (callback):`, e.message || e);
-            pararLeitura(false);
-        };
+        const cacheKey = `${textoSanitizado}_${NOME_DA_VOZ}_${taxaDeFala}`; // Usa voz padrão do script
+        
+        // *** LÓGICA DE CACHE COM DATA URL ***
+        if (audioCache.has(cacheKey)) {
+             console.log(`Áudio encontrado no cache para índice ${indiceVersiculoAtual}.`);
+             const audioSrcFromCache = audioCache.get(cacheKey); 
 
-        // Lógica de Cache
-        const audioSrcFromCache = audioCache.get(cacheKey);
-        if (audioSrcFromCache) {
-            console.log(`Áudio encontrado no cache para índice ${indice}.`);
+             // Verifica se já não estamos a usar este mesmo objeto de áudio
+             if (audioAtual && audioAtual.src === audioSrcFromCache) {
+                 console.log("Áudio do cache já carregado, apenas retomando.");
+             } else {
+                 if (audioAtual) {
+                     console.warn("Limpando referência de áudio anterior (cache).");
+                     // Não precisa parar áudio aqui, pois já o fizemos no início
+                     audioAtual = null; 
+                     audioAtualUrl = null;
+                 }
+                 audioAtual = new Audio(audioSrcFromCache); 
+                 audioAtualUrl = audioSrcFromCache; // Guarda o URL
+                 console.log("Novo objeto audioAtual criado (cache):", audioAtual);
+             }
+             isAudioPlaying = false; 
 
-            if (audioAtual) {
-                console.warn("Limpando referência de áudio anterior (cache).");
-                audioAtual = null;
-                audioAtualUrl = null;
-            }
-
-            audioAtual = new Audio(audioSrcFromCache);
-            audioAtualUrl = audioSrcFromCache;
-            console.log("Novo objeto audioAtual criado (cache):", audioAtual);
-            isAudioPlaying = false;
-
-            return new Promise((resolve, reject) => {
-                const handleErrorCache = (e) => {
-                    console.error("Erro no áudio do cache:", e.message || e, ' - Code:', e.target?.error?.code);
-                    isAudioPlaying = false;
-                    isProcessingAudio = false;
-                    audioCache.delete(cacheKey); // Invalida cache em erro
-
+             return new Promise((resolve, reject) => {
+                 // *** CORREÇÃO TYPEERROR: Handlers definidos ANTES e mais robustos ***
+                 // Usa funções nomeadas para poder removê-las corretamente
+                 const handleErrorCache = (e) => {
+                    console.error("Erro no áudio do cache:", e ? e.type : 'Evento desconhecido');
+                    isAudioPlaying = false; isProcessingAudio = false;
+                    audioCache.delete(cacheKey); 
+                    
                     if (audioAtual && audioAtual.src === audioSrcFromCache) {
-                        audioAtual = null;
-                        audioAtualUrl = null;
+                        audioAtual = null; audioAtualUrl = null;
                     }
-
+                    
+                    // Remove listeners com segurança, verificando e.target
                     if (e && e.target) {
                         e.target.removeEventListener('ended', handleEndedCache);
                         e.target.removeEventListener('error', handleErrorCache);
                     } else { console.warn("handleErrorCache: e.target indefinido."); }
 
-                    toggleControlButtons(false);
-                    if (onErrorCallback) onErrorCallback(e);
+                    toggleControlButtons(false); 
+                    if (onErrorCallback) { // Verifica se existe
+                        try { onErrorCallback(e); } catch(err) { console.error("Erro no onErrorCallback (cache)", err); }
+                    }
                     reject(e);
-                };
-
-                const handleEndedCache = (e) => {
+                 };
+                 
+                 const handleEndedCache = (e) => {
                     console.log(`Evento 'ended' (cache) disparado.`);
                     isAudioPlaying = false;
-
+                    
                     if (audioAtual && audioAtual.src === audioSrcFromCache) {
-                        audioAtual = null;
-                        audioAtualUrl = null;
+                        audioAtual = null; audioAtualUrl = null;
                     }
-
+                    
+                    // Remove listeners com segurança
                     if (e && e.target) {
                         e.target.removeEventListener('ended', handleEndedCache);
                         e.target.removeEventListener('error', handleErrorCache);
                     } else { console.warn("handleEndedCache: e.target indefinido."); }
-
-                    if (onEndedCallback) onEndedCallback(e);
+                    
+                    if (onEndedCallback) { // Verifica se existe
+                        try { onEndedCallback(e); } catch(err) { console.error("Erro no onEndedCallback (cache)", err); }
+                    }
                     resolve();
-                };
+                 };
 
-                audioAtual.addEventListener('ended', handleEndedCache);
-                audioAtual.addEventListener('error', handleErrorCache);
+                 // Adiciona listeners AO OBJETO audioAtual
+                 audioAtual.addEventListener('ended', handleEndedCache);
+                 audioAtual.addEventListener('error', handleErrorCache);
 
-                console.log("Tentando play() (cache)...");
-                audioAtual.play().then(() => {
-                    console.log("Playback iniciado (cache).");
-                    isAudioPlaying = true;
-                    isProcessingAudio = false;
-                    toggleControlButtons(false);
-                }).catch(playError => {
-                    console.error("Erro direto no play() (cache):", playError.message || playError);
-                    handleErrorCache({ target: audioAtual });
-                });
-            });
+                 console.log("Tentando play() (cache)...");
+                 audioAtual.play().then(() => {
+                     console.log("Playback iniciado (cache).");
+                     isAudioPlaying = true;
+                     isProcessingAudio = false; 
+                     toggleControlButtons(false);
+                     // Promessa resolve no handleEndedCache
+                 }).catch(playError => {
+                     console.error("Erro direto no play() (cache):", playError);
+                     handleErrorCache({ target: audioAtual, type: 'play_error', error: playError }); // Passa evento simulado
+                 });
+             });
         }
+        // *** FIM DA LÓGICA DE CACHE ***
 
-        // Chamada ao backend se não em cache
-        console.log(`Áudio não encontrado no cache para índice ${indice}. Chamando backend...`);
+        console.log(`Áudio não encontrado no cache para índice ${indiceVersiculoAtual}. Chamando backend...`);
         const bodyParaBackend = {
             text: textoSanitizado,
-            voice: NOME_DA_VOZ,
-            speed: taxaDeFala
+            voice: NOME_DA_VOZ, 
+            speed: taxaDeFala   
         };
-
+        
         // *** URL DO RENDER ***
-        const backendUrl = 'https://meu-proxy-tts.onrender.com/synthesize';
+        const backendUrl = 'https://meu-proxy-tts.onrender.com/synthesize'; 
 
         return fetch(backendUrl, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify(bodyParaBackend),
-            signal: signal
+            signal: signal 
         })
         .then(res => {
             console.log("Resposta recebida do backend, status:", res.status);
-            if (abortController && abortController.signal === signal) {
-                abortController = null;
-            }
+             if (abortController && abortController.signal === signal) {
+                  abortController = null;
+             }
 
             if (!res.ok) {
                 return res.json().catch(() => null).then(errData => {
@@ -499,70 +600,79 @@ document.addEventListener('DOMContentLoaded', () => {
             return res.json();
         })
         .then(data => {
-            if (estadoLeitura !== 'tocando') {
-                console.warn("Estado mudou durante fetch/processamento TTS. Ignorando resposta.");
-                isProcessingAudio = false;
-                toggleControlButtons(false);
-                throw new Error("Leitura interrompida antes de tocar.");
-            }
+             // Verifica se ainda devemos tocar (pode ter sido interrompido durante o fetch)
+             if (estadoLeitura !== 'tocando') {
+                 console.warn("Estado mudou durante fetch/processamento TTS. Ignorando resposta.");
+                 isProcessingAudio = false; 
+                 toggleControlButtons(false); 
+                 throw new Error("Leitura interrompida antes de tocar."); 
+             }
 
             if (data.audioContent) {
                 console.log("AudioContent recebido do backend.");
+                // *** USA E CACHEIA DATA URL ***
                 const audioSrc = "data:audio/mp3;base64," + data.audioContent;
-
-                if (audioAtual) {
-                    console.warn("Limpando referência de áudio anterior (backend).");
-                    audioAtual = null;
-                    audioAtualUrl = null;
-                }
+                
+                 if (audioAtual) {
+                     console.warn("Limpando referência de áudio anterior (backend).");
+                     audioAtual = null; // Só anula
+                     audioAtualUrl = null;
+                 }
 
                 audioAtual = new Audio(audioSrc);
-                audioAtualUrl = audioSrc;
+                audioAtualUrl = audioSrc; // Guarda URL
                 console.log("Novo objeto audioAtual criado (backend):", audioAtual);
-                isAudioPlaying = false;
+                isAudioPlaying = false; 
 
-                audioCache.set(cacheKey, audioSrc);
-                console.log(`Áudio (Data URL) adicionado ao cache para índice ${indice}.`);
+                audioCache.set(cacheKey, audioSrc); // Cacheia o Data URL
+                console.log(`Áudio (Data URL) adicionado ao cache para índice ${indiceVersiculoAtual}.`);
+                
 
                 return new Promise((resolve, reject) => {
-                    const handleErrorBackend = (e) => {
-                        console.error("Erro no elemento Audio (backend):", e.message || e, ' - Code:', e.target?.error?.code);
-                        isAudioPlaying = false;
-                        isProcessingAudio = false;
-
+                    // *** CORREÇÃO TYPEERROR: Handlers definidos ANTES e mais robustos ***
+                     const handleErrorBackend = (e) => {
+                        console.error("Erro no elemento Audio (backend):", e ? e.type : 'Evento desconhecido');
+                        isAudioPlaying = false; isProcessingAudio = false;
+                        
+                        // Verifica se o áudio que deu erro é o 'audioAtual' antes de anular
                         if (audioAtual && audioAtual.src === audioSrc) {
-                            audioAtual = null;
-                            audioAtualUrl = null;
-                        } else { console.warn("handleErrorBackend: audioAtual global mudou ou era null."); }
+                             audioAtual = null; audioAtualUrl = null;
+                         } else { console.warn("handleErrorBackend: audioAtual global mudou ou era null."); }
 
-                        if (e && e.target) {
+                        // Remove listeners com segurança
+                        if (e && e.target) { 
                             e.target.removeEventListener('ended', handleEndedBackend);
                             e.target.removeEventListener('error', handleErrorBackend);
                         } else { console.warn("handleErrorBackend: e.target indefinido."); }
 
-                        toggleControlButtons(false);
+                        toggleControlButtons(false); 
                         alert("Erro ao carregar ou reproduzir o áudio do servidor.");
-                        if (onErrorCallback) onErrorCallback(e);
+                        if (onErrorCallback) { // Verifica se existe
+                           try { onErrorCallback(e); } catch(err) { console.error("Erro no onErrorCallback (backend)", err); }
+                        }
                         reject(e);
                     };
 
                     const handleEndedBackend = (e) => {
                         console.log(`Evento 'ended' (backend) disparado.`);
                         isAudioPlaying = false;
-
+                        
+                        // Verifica se o áudio que terminou é o 'audioAtual' antes de anular
                         if (audioAtual && audioAtual.src === audioSrc) {
-                            audioAtual = null;
-                            audioAtualUrl = null;
-                        } else if (!audioAtual) {
-                            console.log("Referência global audioAtual já era null em ended (backend).");
-                        } else { console.warn("handleEndedBackend: audioAtual global mudou!"); }
+                             audioAtual = null; audioAtualUrl = null;
+                         } else if (!audioAtual) {
+                             console.log("Referência global audioAtual já era null em ended (backend).");
+                         } else { console.warn("handleEndedBackend: audioAtual global mudou!"); }
 
+                        // Remove listeners com segurança
                         if (e && e.target) {
-                            e.target.removeEventListener('ended', handleEndedBackend);
-                            e.target.removeEventListener('error', handleErrorBackend);
+                           e.target.removeEventListener('ended', handleEndedBackend);
+                           e.target.removeEventListener('error', handleErrorBackend);
                         } else { console.warn("handleEndedBackend: e.target indefinido."); }
 
-                        if (onEndedCallback) onEndedCallback(e);
+                        if (onEndedCallback) { // Verifica se existe
+                           try { onEndedCallback(e); } catch(err) { console.error("Erro no onEndedCallback (backend)", err); }
+                        }
                         resolve();
                     };
 
@@ -573,11 +683,12 @@ document.addEventListener('DOMContentLoaded', () => {
                     audioAtual.play().then(() => {
                         console.log("Playback iniciado (backend).");
                         isAudioPlaying = true;
-                        isProcessingAudio = false;
+                        isProcessingAudio = false; 
                         toggleControlButtons(false);
+                        // Promessa resolve no handleEndedBackend
                     }).catch(playError => {
-                        console.error("Erro direto no play() (backend):", playError.message || playError);
-                        handleErrorBackend({ target: audioAtual });
+                        console.error("Erro direto no play() (backend):", playError);
+                        handleErrorBackend({ target: audioAtual, type: 'play_error', error: playError }); // Passa evento simulado
                     });
                 });
 
@@ -587,30 +698,39 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         })
         .catch(error => {
-            if (error.name === 'AbortError') {
-                console.log(`Fetch para índice ${indice} abortado.`);
+            // Se o erro foi 'Leitura interrompida...', não mostra alerta
+            if (error && error.message === "Leitura interrompida antes de tocar.") {
+                 console.warn(error.message);
+            } else if (error && error.name === 'AbortError') {
+                console.log(`Fetch para índice ${indiceVersiculoAtual} abortado.`);
+                // Não alerta o usuário se foi intencional (AbortError)
             } else {
-                alert(`Não foi possível obter o áudio do servidor: ${error.message || 'Erro desconhecido'}`);
-                console.error(`Erro durante a chamada/processamento para índice ${indice}:`, error);
+                alert(`Não foi possível obter o áudio do servidor: ${error ? error.message : 'Erro desconhecido'}`);
+                console.error(`Erro durante a chamada/processamento para índice ${indiceVersiculoAtual}:`, error);
             }
 
-            if (error.name !== 'AbortError') {
+            // Garante liberação em caso de erro real (não AbortError)
+            if (!error || error.name !== 'AbortError') {
                 isProcessingAudio = false;
                 toggleControlButtons(false);
             }
-            if (abortController && abortController.signal === signal) abortController = null;
+            if (abortController && abortController.signal === signal) abortController = null; 
 
-            return Promise.reject(error);
+            // Rejeita a promessa para parar o ciclo 'lerProximoVersiculo'
+            return Promise.reject(error); 
         });
     }
+    // *** FIM DA FUNÇÃO DE ÁUDIO ***
+
 
     // Função auxiliar para converter Base64 para Blob (usada apenas no download)
     function b64toBlob(b64Data, contentType = '', sliceSize = 512) {
+        // (Esta função não precisa de alterações)
         try {
-            if (!b64Data || typeof b64Data !== 'string' || !/^[A-Za-z0-9+/=]+$/.test(b64Data.substring(0, 1024))) {
-                console.error("String Base64 inválida recebida:", b64Data.substring(0, 100) + "...");
-                throw new Error('Dados de áudio inválidos recebidos do servidor.');
-            }
+             if (!b64Data || typeof b64Data !== 'string' || !/^[A-Za-z0-9+/=]+$/.test(b64Data.substring(0, 1024))) {
+                  console.error("String Base64 inválida recebida:", b64Data.substring(0, 100) + "..."); 
+                  throw new Error('Dados de áudio inválidos recebidos do servidor.');
+             }
 
             const byteCharacters = atob(b64Data);
             const byteArrays = [];
@@ -625,8 +745,8 @@ document.addEventListener('DOMContentLoaded', () => {
             }
             return new Blob(byteArrays, { type: contentType });
         } catch (e) {
-            console.error("Erro ao converter Base64 para Blob:", e.message || e);
-            throw new Error("Falha ao decodificar dados de áudio recebidos.");
+             console.error("Erro ao converter Base64 para Blob:", e);
+             throw new Error("Falha ao decodificar dados de áudio recebidos."); 
         }
     }
 
@@ -636,7 +756,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Inicializa a label
     if (taxaFalaInput && taxaFalaLabel) {
-        taxaDeFala = parseFloat(taxaFalaInput.value);
+        taxaDeFala = parseFloat(taxaFalaInput.value); 
         taxaFalaLabel.textContent = `Velocidade (${taxaDeFala.toFixed(2)}x)`;
     }
 
@@ -655,7 +775,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
             estadoLeitura = 'tocando';
             const btn = document.getElementById('play-pause-btn');
-            if (btn) btn.innerHTML = '⏸️';
+            if(btn) btn.innerHTML = '⏸️';
             setTimeout(() => {
                 if (estadoLeitura === 'tocando') {
                     console.log("Reiniciando leitura após ajuste de velocidade.");
@@ -663,11 +783,12 @@ document.addEventListener('DOMContentLoaded', () => {
                 } else {
                     console.log("Estado mudou após ajuste de velocidade, não reiniciando.");
                 }
-            }, 300);
+            }, 300); 
         }
     });
-
-    // Função debounce
+    // --- FIM DA CONEXÃO DO SLIDER ---
+    
+    // *** ADICIONA A DEFINIÇÃO DA FUNÇÃO DEBOUNCE ***
     function debounce(func, wait) {
         let timeout;
         return function executedFunction(...args) {
@@ -679,14 +800,7 @@ document.addEventListener('DOMContentLoaded', () => {
             timeout = setTimeout(later, wait);
         };
     }
-
-    // Função para desabilitar/habilitar botões durante processamento
-    function toggleControlButtons(disabled) {
-        const playBtn = document.getElementById('play-pause-btn');
-        const stopBtn = document.getElementById('stop-btn');
-        if (playBtn) playBtn.disabled = disabled;
-        if (stopBtn) stopBtn.disabled = disabled;
-    }
+    // *** FIM DA ADIÇÃO DO DEBOUNCE ***
 
     // Inicia o processo carregando a lista de livros
     popularLivros();
