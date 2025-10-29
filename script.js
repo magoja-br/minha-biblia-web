@@ -133,6 +133,7 @@ document.addEventListener('DOMContentLoaded', () => {
             else cabecalho.insertAdjacentHTML('beforeend', playerHtml);
 
             // Adiciona listeners aos botões (usando debounce)
+            // *** CORREÇÃO: Usa debounce aqui ***
             document.getElementById('play-pause-btn').addEventListener('click', debounce(tocarPausarLeitura, 200));
             document.getElementById('stop-btn').addEventListener('click', debounce(() => pararLeitura(true), 200));
             console.log("Painel de controle adicionado.");
@@ -281,7 +282,6 @@ document.addEventListener('DOMContentLoaded', () => {
             console.log("Iniciando processo de parada para audioParaLimpar existente.");
             
             // *** CORREÇÃO: Remove listeners PRIMEIRO ***
-            // Esta é a correção principal para os erros de console
             audioParaLimpar.onended = null; 
             audioParaLimpar.onerror = null;
 
@@ -295,7 +295,7 @@ document.addEventListener('DOMContentLoaded', () => {
             }
 
             console.log("Agendando limpeza final do áudio anterior (src)...");
-            // Não precisamos revogar Data URLs
+            // Não revogar Data URLs
             
             setTimeout(() => {
                 console.log("Executando limpeza final atrasada (src='').");
