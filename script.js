@@ -3,8 +3,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // --- CHAVE DE API (REMOVIDA/COMENTADA) ---
     // const apiKey = "chave"; 
-    // --- VOZ E VELOCIDADE ---
-    const NOME_DA_VOZ = 'pt-BR-Chirp3-HD-Algieba'; // Voz padrão fixa
+    // --- VOZ E VELOCIDADE (VOZ FIXA COMO PEDIDO) ---
+    const NOME_DA_VOZ = 'pt-BR-Chirp3-HD-Algieba'; 
     let taxaDeFala = 1.0; 
 
     const cabecalho = document.querySelector('header');
@@ -19,7 +19,6 @@ document.addEventListener('DOMContentLoaded', () => {
     let estadoLeitura = 'parado'; 
     let audioAtual = null; 
     let audioAtualUrl = null; // Guarda o URL (Data URL) do audioAtual
-    let timeoutLimpezaAudio = null; 
     let abortController = null; 
     let isAudioPlaying = false; 
     let isProcessingAudio = false; 
@@ -27,7 +26,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // Cache de áudio (usará Data URL)
     const audioCache = new Map();
 
-    // 1. VERIFICAÇÃO DE DADOS (CRÍTICA)
+    // 1. VERIFICAÇÃO DE DADOS
     if (typeof bibliaData === 'undefined') {
         console.error('Erro crítico: bibliaData não está definido.');
         areaLeitura.innerHTML = `<p class="aviso" style="color:red; font-weight:bold; padding:20px;">ERRO: Não foi possível carregar os dados da Bíblia.</p>`;
@@ -134,7 +133,6 @@ document.addEventListener('DOMContentLoaded', () => {
             else cabecalho.insertAdjacentHTML('beforeend', playerHtml);
 
             // Adiciona listeners aos botões (usando debounce)
-            // *** CORREÇÃO: Usa debounce aqui ***
             document.getElementById('play-pause-btn').addEventListener('click', debounce(tocarPausarLeitura, 200));
             document.getElementById('stop-btn').addEventListener('click', debounce(() => pararLeitura(true), 200));
             console.log("Painel de controle adicionado.");
@@ -199,11 +197,6 @@ document.addEventListener('DOMContentLoaded', () => {
         const btn = document.getElementById('play-pause-btn');
         if (!btn) { console.error("Botão Play/Pause não encontrado!"); return; }
 
-        if(timeoutLimpezaAudio) {
-            clearTimeout(timeoutLimpezaAudio);
-            timeoutLimpezaAudio = null;
-        }
-
         if (estadoLeitura === 'tocando') {
             console.log("Pausando leitura");
             pausarLeitura();
@@ -240,11 +233,6 @@ document.addEventListener('DOMContentLoaded', () => {
         console.log("Função pausarLeitura chamada");
         estadoLeitura = 'pausado';
         isAudioPlaying = false; 
-
-        if(timeoutLimpezaAudio) {
-            clearTimeout(timeoutLimpezaAudio);
-            timeoutLimpezaAudio = null;
-        }
 
         if (isProcessingAudio && abortController) {
              console.log("Pausando durante processamento: Abortando fetch TTS.");
@@ -284,12 +272,6 @@ document.addEventListener('DOMContentLoaded', () => {
             abortController = null;
         }
 
-        // Limpa timeout de limpeza
-        if(timeoutLimpezaAudio) {
-            clearTimeout(timeoutLimpezaAudio);
-            timeoutLimpezaAudio = null;
-        }
-
         const audioParaLimpar = audioAtual; 
         const urlParaLimpar = audioAtualUrl; 
         audioAtual = null; 
@@ -299,6 +281,7 @@ document.addEventListener('DOMContentLoaded', () => {
             console.log("Iniciando processo de parada para audioParaLimpar existente.");
             
             // *** CORREÇÃO: Remove listeners PRIMEIRO ***
+            // Esta é a correção principal para os erros de console
             audioParaLimpar.onended = null; 
             audioParaLimpar.onerror = null;
 
@@ -312,12 +295,11 @@ document.addEventListener('DOMContentLoaded', () => {
             }
 
             console.log("Agendando limpeza final do áudio anterior (src)...");
-            // Não revogar Data URLs
+            // Não precisamos revogar Data URLs
             
             setTimeout(() => {
                 console.log("Executando limpeza final atrasada (src='').");
                 try { 
-                    // Verifica se audioParaLimpar ainda existe E se a src é a que esperávamos
                     if (audioParaLimpar && audioParaLimpar.src === urlParaLimpar) {
                         audioParaLimpar.src = ''; 
                     }
@@ -411,7 +393,7 @@ document.addEventListener('DOMContentLoaded', () => {
             // Define o callback de erro
             const onAudioErrorCallback = (errorEvent) => {
                 // *** CORREÇÃO: Não imprime erro duplicado, apenas loga a chamada ***
-                console.warn("Callback de erro do áudio chamado:", errorEvent ? errorEvent.type : 'Evento desconhecido'); 
+                console.warn("Callback de erro do áudio chamado:", errorEvent ? errorEvent.type : 'Evento desconhecido');
                 isAudioPlaying = false; isProcessingAudio = false;
                 
                 // Limpa os listeners com segurança
@@ -488,29 +470,23 @@ document.addEventListener('DOMContentLoaded', () => {
              console.log(`Áudio encontrado no cache para índice ${indiceVersiculoAtual}.`);
              const audioSrcFromCache = audioCache.get(cacheKey); 
 
-             // Verifica se já não estamos a usar este mesmo objeto de áudio
-             if (audioAtual && audioAtual.src === audioSrcFromCache) {
-                 console.log("Áudio do cache já carregado, apenas retomando.");
-             } else {
-                 if (audioAtual) {
-                     console.warn("Limpando referência de áudio anterior (cache).");
-                     // Não precisa parar áudio aqui, pois já o fizemos no início
-                     audioAtual = null; 
-                     audioAtualUrl = null;
-                 }
-                 audioAtual = new Audio(audioSrcFromCache); 
-                 audioAtualUrl = audioSrcFromCache; // Guarda o URL
-                 console.log("Novo objeto audioAtual criado (cache):", audioAtual);
+             if (audioAtual) {
+                 console.warn("Limpando referência de áudio anterior (cache).");
+                 audioAtual = null; 
+                 audioAtualUrl = null;
              }
+
+             audioAtual = new Audio(audioSrcFromCache); 
+             audioAtualUrl = audioSrcFromCache; // Guarda o URL
+             console.log("Novo objeto audioAtual criado (cache):", audioAtual);
              isAudioPlaying = false; 
 
              return new Promise((resolve, reject) => {
                  // *** CORREÇÃO TYPEERROR: Handlers definidos ANTES e mais robustos ***
-                 // Usa funções nomeadas para poder removê-las corretamente
                  const handleErrorCache = (e) => {
                     console.error("Erro no áudio do cache:", e ? e.type : 'Evento desconhecido');
                     isAudioPlaying = false; isProcessingAudio = false;
-                    audioCache.delete(cacheKey); 
+                    audioCache.delete(cacheKey); // Remove do cache se deu erro
                     
                     if (audioAtual && audioAtual.src === audioSrcFromCache) {
                         audioAtual = null; audioAtualUrl = null;
@@ -549,7 +525,6 @@ document.addEventListener('DOMContentLoaded', () => {
                     resolve();
                  };
 
-                 // Adiciona listeners AO OBJETO audioAtual
                  audioAtual.addEventListener('ended', handleEndedCache);
                  audioAtual.addEventListener('error', handleErrorCache);
 
